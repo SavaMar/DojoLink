@@ -9,14 +9,15 @@ import {
 } from "lucide-react";
 
 interface AnalyticsPageProps {
-  params: {
+  params: Promise<{
     locale: string;
     dojo: string;
-  };
+  }>;
 }
 
 export default async function AnalyticsPage({ params }: AnalyticsPageProps) {
-  const dojo = await getDojoData(params.dojo);
+  const resolvedParams = await params;
+  const dojo = await getDojoData(resolvedParams.dojo);
 
   if (!dojo) {
     return <div>Dojo not found</div>;

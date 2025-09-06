@@ -8,12 +8,13 @@ import {
   getBeltColorClass,
   calculateAge,
 } from "@/lib/belt-system";
+import { CreditCard, AlertTriangle } from "lucide-react";
 
 interface InstructorsPageProps {
-  params: {
+  params: Promise<{
     locale: string;
     dojo: string;
-  };
+  }>;
 }
 
 const roleColors = {
@@ -28,11 +29,26 @@ const roleLabels = {
   instructor: "Instructor",
 };
 
+const paymentStatusColors = {
+  paid: "bg-green-100 text-green-800",
+  up_to_date: "bg-green-100 text-green-800",
+  due_soon: "bg-yellow-100 text-yellow-800",
+  overdue: "bg-red-100 text-red-800",
+};
+
+const paymentStatusLabels = {
+  paid: "Paid",
+  up_to_date: "Up to Date",
+  due_soon: "Due Soon",
+  overdue: "Overdue",
+};
+
 export default async function InstructorsPage({
   params,
 }: InstructorsPageProps) {
-  const dojo = await getDojoData(params.dojo);
-  const instructors = await getDojoInstructors(params.dojo);
+  const resolvedParams = await params;
+  const dojo = await getDojoData(resolvedParams.dojo);
+  const instructors = await getDojoInstructors(resolvedParams.dojo);
 
   if (!dojo) {
     return <div>Dojo not found</div>;
@@ -153,6 +169,30 @@ export default async function InstructorsPage({
                 <span className="text-sm text-gray-500">
                   Age: {calculateAge(instructor.birthday)}
                 </span>
+              </div>
+
+              {/* Payment Status */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <CreditCard className="w-4 h-4 text-gray-500" />
+                  <span className="text-sm text-gray-600">
+                    {instructor.paymentStatus.amount}{" "}
+                    {instructor.paymentStatus.currency}/month
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Badge
+                    className={
+                      paymentStatusColors[instructor.paymentStatus.status]
+                    }
+                  >
+                    {paymentStatusLabels[instructor.paymentStatus.status]}
+                  </Badge>
+                  {(instructor.paymentStatus.status === "overdue" ||
+                    instructor.paymentStatus.status === "due_soon") && (
+                    <AlertTriangle className="w-4 h-4 text-red-500" />
+                  )}
+                </div>
               </div>
 
               {/* Contact Information */}

@@ -57,12 +57,26 @@ export interface DojoMember {
   birthday: string;
   ageCategory: AgeCategory;
   belt: Belt;
-  status: "active" | "inactive" | "suspended";
+  status: "active" | "inactive" | "suspended" | "on_vacation" | "injured";
   phone?: string;
+  paymentStatus: {
+    lastPayment: string;
+    nextPaymentDue: string;
+    amount: number;
+    currency: string;
+    status: "paid" | "overdue" | "due_soon" | "up_to_date";
+    subscriptionType: "year" | "month" | "quarter" | "one_time";
+  };
   emergencyContact?: {
     name: string;
     phone: string;
     relationship: string;
+  };
+  absenceInfo?: {
+    reason: "vacation" | "injury";
+    startDate: string;
+    expectedReturnDate: string;
+    notes?: string;
   };
 }
 

@@ -21,6 +21,11 @@ import {
   Phone,
   Mail,
   User,
+  CreditCard,
+  AlertTriangle,
+  Plane,
+  Heart,
+  Clock,
 } from "lucide-react";
 import {
   getBeltDisplayName,
@@ -29,19 +34,51 @@ import {
   ageCategories,
 } from "@/lib/belt-system";
 import { DojoMember, AgeCategory, BeltColor } from "@/types/dojo";
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 
 interface MembersPageProps {
-  params: {
+  params: Promise<{
     locale: string;
     dojo: string;
-  };
+  }>;
 }
 
 const statusColors = {
   active: "bg-green-100 text-green-800",
   inactive: "bg-yellow-100 text-yellow-800",
   suspended: "bg-red-100 text-red-800",
+  on_vacation: "bg-blue-100 text-blue-800",
+  injured: "bg-orange-100 text-orange-800",
+};
+
+const paymentStatusColors = {
+  paid: "bg-green-100 text-green-800",
+  up_to_date: "bg-green-100 text-green-800",
+  due_soon: "bg-yellow-100 text-yellow-800",
+  overdue: "bg-red-100 text-red-800",
+};
+
+const paymentStatusLabels = {
+  paid: "Paid",
+  up_to_date: "Up to Date",
+  due_soon: "Due Soon",
+  overdue: "Overdue",
+};
+
+const subscriptionTypeLabels = {
+  year: "Year",
+  month: "Month",
+  quarter: "Quarter",
+  one_time: "One Time",
+};
+
+// Date formatting utility
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  const day = date.getDate().toString().padStart(2, "0");
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const year = date.getFullYear().toString().slice(-2);
+  return `${day}.${month}.${year}`;
 };
 
 const beltColors: BeltColor[] = [
@@ -57,6 +94,7 @@ const beltColors: BeltColor[] = [
 ];
 
 export default function MembersPage({ params }: MembersPageProps) {
+  const resolvedParams = use(params);
   const [members, setMembers] = useState<DojoMember[]>([]);
   const [filteredMembers, setFilteredMembers] = useState<DojoMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,13 +102,16 @@ export default function MembersPage({ params }: MembersPageProps) {
   const [ageFilter, setAgeFilter] = useState<AgeCategory | "all">("all");
   const [beltFilter, setBeltFilter] = useState<BeltColor | "all">("all");
   const [statusFilter, setStatusFilter] = useState<
-    "all" | "active" | "inactive" | "suspended"
+    "all" | "active" | "inactive" | "suspended" | "on_vacation" | "injured"
+  >("all");
+  const [paymentFilter, setPaymentFilter] = useState<
+    "all" | "paid" | "up_to_date" | "due_soon" | "overdue"
   >("all");
 
   useEffect(() => {
     const loadMembers = async () => {
       try {
-        const data = await getDojoMembers(params.dojo);
+        const data = await getDojoMembers(resolvedParams.dojo);
         setMembers(data);
         setFilteredMembers(data);
       } catch (error) {
@@ -80,7 +121,7 @@ export default function MembersPage({ params }: MembersPageProps) {
       }
     };
     loadMembers();
-  }, [params.dojo]);
+  }, [resolvedParams.dojo]);
 
   useEffect(() => {
     let filtered = members;
@@ -109,8 +150,15 @@ export default function MembersPage({ params }: MembersPageProps) {
       filtered = filtered.filter((member) => member.status === statusFilter);
     }
 
+    // Payment filter
+    if (paymentFilter !== "all") {
+      filtered = filtered.filter(
+        (member) => member.paymentStatus.status === paymentFilter
+      );
+    }
+
     setFilteredMembers(filtered);
-  }, [members, searchTerm, ageFilter, beltFilter, statusFilter]);
+  }, [members, searchTerm, ageFilter, beltFilter, statusFilter, paymentFilter]);
 
   const getMemberStats = () => {
     const total = members.length;
@@ -123,7 +171,19 @@ export default function MembersPage({ params }: MembersPageProps) {
       youth: members.filter((m) => m.ageCategory === "youth").length,
       adult: members.filter((m) => m.ageCategory === "adult").length,
     };
-    return { total, active, byAge };
+    const byPayment = {
+      overdue: members.filter((m) => m.paymentStatus.status === "overdue")
+        .length,
+      dueSoon: members.filter((m) => m.paymentStatus.status === "due_soon")
+        .length,
+      upToDate: members.filter((m) => m.paymentStatus.status === "up_to_date")
+        .length,
+    };
+    const byStatus = {
+      onVacation: members.filter((m) => m.status === "on_vacation").length,
+      injured: members.filter((m) => m.status === "injured").length,
+    };
+    return { total, active, byAge, byPayment, byStatus };
   };
 
   const stats = getMemberStats();
@@ -155,7 +215,7 @@ export default function MembersPage({ params }: MembersPageProps) {
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-9 gap-4">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center">
@@ -229,6 +289,66 @@ export default function MembersPage({ params }: MembersPageProps) {
             </div>
           </CardContent>
         </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <div className="h-8 w-8 bg-red-100 rounded-full flex items-center justify-center">
+                <AlertTriangle className="h-4 w-4 text-red-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Overdue</p>
+                <p className="text-2xl font-bold text-red-600">
+                  {stats.byPayment.overdue}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <div className="h-8 w-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                <AlertTriangle className="h-4 w-4 text-yellow-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Due Soon</p>
+                <p className="text-2xl font-bold text-yellow-600">
+                  {stats.byPayment.dueSoon}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <Plane className="h-4 w-4 text-blue-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">On Vacation</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {stats.byStatus.onVacation}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <div className="h-8 w-8 bg-orange-100 rounded-full flex items-center justify-center">
+                <Heart className="h-4 w-4 text-orange-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Injured</p>
+                <p className="text-2xl font-bold text-orange-600">
+                  {stats.byStatus.injured}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Filters */}
@@ -240,7 +360,7 @@ export default function MembersPage({ params }: MembersPageProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -298,7 +418,13 @@ export default function MembersPage({ params }: MembersPageProps) {
               value={statusFilter}
               onValueChange={(value) =>
                 setStatusFilter(
-                  value as "all" | "active" | "inactive" | "suspended"
+                  value as
+                    | "all"
+                    | "active"
+                    | "inactive"
+                    | "suspended"
+                    | "on_vacation"
+                    | "injured"
                 )
               }
             >
@@ -310,6 +436,33 @@ export default function MembersPage({ params }: MembersPageProps) {
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="inactive">Inactive</SelectItem>
                 <SelectItem value="suspended">Suspended</SelectItem>
+                <SelectItem value="on_vacation">On Vacation</SelectItem>
+                <SelectItem value="injured">Injured</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Payment Status Filter */}
+            <Select
+              value={paymentFilter}
+              onValueChange={(value) =>
+                setPaymentFilter(
+                  value as
+                    | "all"
+                    | "paid"
+                    | "up_to_date"
+                    | "due_soon"
+                    | "overdue"
+                )
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Payment Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Payments</SelectItem>
+                <SelectItem value="up_to_date">Up to Date</SelectItem>
+                <SelectItem value="due_soon">Due Soon</SelectItem>
+                <SelectItem value="overdue">Overdue</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -317,97 +470,168 @@ export default function MembersPage({ params }: MembersPageProps) {
       </Card>
 
       {/* Members Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {filteredMembers.map((member) => (
-          <Card key={member.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
-                    <span className="text-gray-600 font-medium text-lg">
+          <Card
+            key={member.id}
+            className="hover:shadow-lg transition-shadow flex flex-col h-full"
+          >
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                    <span className="text-gray-600 font-medium text-sm">
                       {member.name
                         .split(" ")
                         .map((n) => n[0])
                         .join("")}
                     </span>
                   </div>
-                  <div>
-                    <CardTitle className="text-lg">{member.name}</CardTitle>
-                    <p className="text-sm text-gray-500">{member.email}</p>
+                  <div className="min-w-0 flex-1">
+                    <CardTitle className="text-sm font-medium truncate">
+                      {member.name}
+                    </CardTitle>
+                    <p className="text-xs text-gray-500 truncate">
+                      {member.email}
+                    </p>
                   </div>
                 </div>
-                <Badge className={statusColors[member.status]}>
-                  {member.status}
+                <Badge className={`${statusColors[member.status]} text-xs`}>
+                  {member.status.replace("_", " ")}
                 </Badge>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Belt and Age */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <div
-                    className={`w-6 h-6 rounded-full border-2 ${getBeltColorClass(
-                      member.belt
-                    )}`}
-                  ></div>
-                  <span className="text-sm font-medium">
-                    {getBeltDisplayName(member.belt)}
-                  </span>
+            <CardContent className="pt-0 flex-1 flex flex-col">
+              <div className="space-y-3 flex-1">
+                {/* Belt and Subscription */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <div
+                      className={`w-4 h-4 rounded-full border ${getBeltColorClass(
+                        member.belt
+                      )}`}
+                    ></div>
+                    <span className="text-xs font-medium">
+                      {member.belt.color.charAt(0).toUpperCase() +
+                        member.belt.color.slice(1)}
+                      {member.belt.stripes > 0 && ` (${member.belt.stripes})`}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <CreditCard className="w-3 h-3 text-gray-500" />
+                    <span className="text-xs text-gray-600">
+                      {
+                        subscriptionTypeLabels[
+                          member.paymentStatus.subscriptionType
+                        ]
+                      }
+                    </span>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <span className="text-sm text-gray-500">
+
+                {/* Payment Status */}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-500">
                     Age: {calculateAge(member.birthday)}
                   </span>
-                  <p className="text-xs text-gray-400">
-                    {ageCategories[member.ageCategory].label}
-                  </p>
+                  <div className="flex items-center space-x-1">
+                    <Badge
+                      className={`${
+                        paymentStatusColors[member.paymentStatus.status]
+                      } text-xs px-2 py-0.5`}
+                    >
+                      {paymentStatusLabels[member.paymentStatus.status]}
+                    </Badge>
+                    {(member.paymentStatus.status === "overdue" ||
+                      member.paymentStatus.status === "due_soon") && (
+                      <AlertTriangle className="w-3 h-3 text-red-500" />
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              {/* Contact Information */}
-              <div className="space-y-2">
-                {member.phone && (
-                  <div className="flex items-center text-sm text-gray-600">
-                    <Phone className="w-4 h-4 mr-2" />
-                    {member.phone}
+                {/* Key Information */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-xs text-gray-500">
+                    <span>Joined:</span>
+                    <span>{formatDate(member.joinedAt)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-gray-500">
+                    <span>Next payment:</span>
+                    <span>
+                      {formatDate(member.paymentStatus.nextPaymentDue)}
+                    </span>
+                  </div>
+                  {member.phone && (
+                    <div className="flex items-center text-xs text-gray-500">
+                      <Phone className="w-3 h-3 mr-1" />
+                      {member.phone}
+                    </div>
+                  )}
+                </div>
+
+                {/* Absence Information */}
+                {member.absenceInfo && (
+                  <div className="pt-2 border-t border-gray-200">
+                    <div className="flex items-center space-x-1 mb-1">
+                      {member.absenceInfo.reason === "vacation" ? (
+                        <Plane className="w-3 h-3 text-blue-500" />
+                      ) : (
+                        <Heart className="w-3 h-3 text-orange-500" />
+                      )}
+                      <p className="text-xs font-medium text-gray-500 capitalize">
+                        {member.absenceInfo.reason === "vacation"
+                          ? "Vacation"
+                          : "Injured"}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-xs text-gray-500">
+                        <span>From:</span>
+                        <span>{formatDate(member.absenceInfo.startDate)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-gray-500">
+                        <span>Return:</span>
+                        <span>
+                          {formatDate(member.absenceInfo.expectedReturnDate)}
+                        </span>
+                      </div>
+                      {member.absenceInfo.notes && (
+                        <p className="text-xs text-gray-400 truncate">
+                          {member.absenceInfo.notes}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 )}
-                <div className="flex items-center text-sm text-gray-600">
-                  <Mail className="w-4 h-4 mr-2" />
-                  {member.email}
-                </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Joined: {new Date(member.joinedAt).toLocaleDateString()}
-                </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <Award className="w-4 h-4 mr-2" />
-                  Birthday: {new Date(member.birthday).toLocaleDateString()}
-                </div>
+
+                {/* Emergency Contact */}
+                {member.emergencyContact && (
+                  <div className="pt-2 border-t border-gray-200">
+                    <p className="text-xs font-medium text-gray-500 mb-1">
+                      Emergency
+                    </p>
+                    <p className="text-xs text-gray-600 truncate">
+                      {member.emergencyContact.name} (
+                      {member.emergencyContact.relationship})
+                    </p>
+                  </div>
+                )}
               </div>
 
-              {/* Emergency Contact */}
-              {member.emergencyContact && (
-                <div className="pt-2 border-t border-gray-200">
-                  <p className="text-xs font-medium text-gray-500 mb-1">
-                    Emergency Contact
-                  </p>
-                  <p className="text-sm text-gray-700">
-                    {member.emergencyContact.name} (
-                    {member.emergencyContact.relationship})
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {member.emergencyContact.phone}
-                  </p>
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex space-x-2 pt-2">
-                <Button variant="outline" size="sm" className="flex-1">
-                  View Profile
+              {/* Action Buttons - Always at bottom */}
+              <div className="flex space-x-1 pt-2 mt-auto">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 text-xs px-2 py-1"
+                >
+                  View
                 </Button>
-                <Button variant="outline" size="sm" className="flex-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 text-xs px-2 py-1"
+                >
                   Edit
                 </Button>
               </div>

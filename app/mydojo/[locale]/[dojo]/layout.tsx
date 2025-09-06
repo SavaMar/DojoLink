@@ -14,15 +14,19 @@ export default async function DojoLayout({
   params,
 }: {
   children: React.ReactNode;
-  params: { locale: string; dojo: string };
+  params: Promise<{ locale: string; dojo: string }>;
 }) {
+  const resolvedParams = await params;
   const messages = await getMessages();
 
   return (
     <NextIntlClientProvider messages={messages}>
       <div className="min-h-screen bg-gray-50">
         <div className="flex h-screen">
-          <DashboardSidebar dojo={params.dojo} locale={params.locale} />
+          <DashboardSidebar
+            dojo={resolvedParams.dojo}
+            locale={resolvedParams.locale}
+          />
           <main className="flex-1 overflow-auto">
             <div className="p-6">{children}</div>
           </main>

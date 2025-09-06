@@ -5,14 +5,15 @@ import { Badge } from "@/components/ui/badge";
 import { Settings, Save, Upload, Trash2 } from "lucide-react";
 
 interface SettingsPageProps {
-  params: {
+  params: Promise<{
     locale: string;
     dojo: string;
-  };
+  }>;
 }
 
 export default async function SettingsPage({ params }: SettingsPageProps) {
-  const dojo = await getDojoData(params.dojo);
+  const resolvedParams = await params;
+  const dojo = await getDojoData(resolvedParams.dojo);
 
   if (!dojo) {
     return <div>Dojo not found</div>;

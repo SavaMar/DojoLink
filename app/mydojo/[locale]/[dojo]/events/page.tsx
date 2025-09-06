@@ -5,10 +5,10 @@ import { Calendar, Clock, Users, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface EventsPageProps {
-  params: {
+  params: Promise<{
     locale: string;
     dojo: string;
-  };
+  }>;
 }
 
 const mockEvents = [
@@ -51,7 +51,8 @@ const mockEvents = [
 ];
 
 export default async function EventsPage({ params }: EventsPageProps) {
-  const dojo = await getDojoData(params.dojo);
+  const resolvedParams = await params;
+  const dojo = await getDojoData(resolvedParams.dojo);
 
   if (!dojo) {
     return <div>Dojo not found</div>;

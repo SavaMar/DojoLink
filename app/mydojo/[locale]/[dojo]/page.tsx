@@ -2,14 +2,15 @@ import { getDojoData } from "@/data/dojos";
 import { DashboardOverview } from "@/components/DashboardOverview";
 
 interface DojoPageProps {
-  params: {
+  params: Promise<{
     locale: string;
     dojo: string;
-  };
+  }>;
 }
 
 export default async function DojoPage({ params }: DojoPageProps) {
-  const dojo = await getDojoData(params.dojo);
+  const resolvedParams = await params;
+  const dojo = await getDojoData(resolvedParams.dojo);
 
   if (!dojo) {
     return (

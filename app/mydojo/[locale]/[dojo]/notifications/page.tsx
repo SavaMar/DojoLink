@@ -4,10 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { Bell, CheckCircle, AlertCircle, Info, X } from "lucide-react";
 
 interface NotificationsPageProps {
-  params: {
+  params: Promise<{
     locale: string;
     dojo: string;
-  };
+  }>;
 }
 
 const mockNotifications = [
@@ -68,7 +68,8 @@ const notificationColors = {
 export default async function NotificationsPage({
   params,
 }: NotificationsPageProps) {
-  const dojo = await getDojoData(params.dojo);
+  const resolvedParams = await params;
+  const dojo = await getDojoData(resolvedParams.dojo);
 
   if (!dojo) {
     return <div>Dojo not found</div>;
