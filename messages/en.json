@@ -1,0 +1,56 @@
+{
+  "navigation": {
+    "home": "Home",
+    "events": "Events",
+    "about": "About",
+    "contact": "Contact"
+  },
+  "events": {
+    "title": "JiuJitsu Events",
+    "categories": {
+      "womens": "Women's",
+      "openMat": "Open Mat",
+      "competitions": "Competitions",
+      "seminar": "Seminar",
+      "kids": "Kids",
+      "camps": "Camps"
+    },
+    "types": {
+      "gi": "Gi",
+      "grappling": "Grappling"
+    },
+    "pricing": {
+      "free": "Free",
+      "paid": "Paid"
+    },
+    "actions": {
+      "apply": "Apply",
+      "showMore": "Show More",
+      "bookmark": "Bookmark",
+      "bookmarked": "Bookmarked"
+    },
+    "details": {
+      "organizedBy": "Organized by",
+      "earlyBird": "Early Bird",
+      "registerTill": "Register until",
+      "competitionDate": "Competition Date",
+      "time": "Time",
+      "address": "Address",
+      "viewOnMap": "View on Map"
+    }
+  },
+  "filters": {
+    "title": "Filters",
+    "category": "Category",
+    "canton": "Canton",
+    "type": "Type",
+    "pricing": "Pricing",
+    "clearAll": "Clear All",
+    "apply": "Apply Filters"
+  },
+  "common": {
+    "loading": "Loading...",
+    "noEvents": "No events found",
+    "error": "An error occurred"
+  }
+}

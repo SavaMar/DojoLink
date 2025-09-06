@@ -1,0 +1,56 @@
+{
+  "navigation": {
+    "home": "Home",
+    "events": "Eventi",
+    "about": "Chi siamo",
+    "contact": "Contatti"
+  },
+  "events": {
+    "title": "Eventi JiuJitsu",
+    "categories": {
+      "womens": "Donne",
+      "openMat": "Tappeto Libero",
+      "competitions": "Competizioni",
+      "seminar": "Seminario",
+      "kids": "Bambini",
+      "camps": "Campi"
+    },
+    "types": {
+      "gi": "Gi",
+      "grappling": "Grappling"
+    },
+    "pricing": {
+      "free": "Gratuito",
+      "paid": "A pagamento"
+    },
+    "actions": {
+      "apply": "Iscriviti",
+      "showMore": "Mostra di più",
+      "bookmark": "Segnalibro",
+      "bookmarked": "Segnalibro impostato"
+    },
+    "details": {
+      "organizedBy": "Organizzato da",
+      "earlyBird": "Tariffa anticipata",
+      "registerTill": "Iscrizione fino al",
+      "competitionDate": "Data competizione",
+      "time": "Orario",
+      "address": "Indirizzo",
+      "viewOnMap": "Vedi sulla mappa"
+    }
+  },
+  "filters": {
+    "title": "Filtri",
+    "category": "Categoria",
+    "canton": "Cantone",
+    "type": "Tipo",
+    "pricing": "Prezzo",
+    "clearAll": "Cancella tutto",
+    "apply": "Applica filtri"
+  },
+  "common": {
+    "loading": "Caricamento...",
+    "noEvents": "Nessun evento trovato",
+    "error": "Si è verificato un errore"
+  }
+}
