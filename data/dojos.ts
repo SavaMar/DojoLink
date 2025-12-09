@@ -48,7 +48,9 @@ export const members: DojoMember[] = [
     role: "owner",
     joinedAt: "2020-01-15",
     lastActive: "2024-12-19",
-    birthday: "1985-03-15",
+    birthday: "1985-09-26", // Today's birthday
+    isBirthdayToday: true, // Prototype flag
+    attendancePercentage: 95, // Very regular attendance
     ageCategory: "adult",
     belt: {
       color: "black",
@@ -80,7 +82,9 @@ export const members: DojoMember[] = [
     role: "instructor",
     joinedAt: "2021-08-20",
     lastActive: "2024-12-19",
-    birthday: "1990-07-22",
+    birthday: "1990-12-20", // Today's birthday
+    isBirthdayToday: true, // Prototype flag
+    attendancePercentage: 88, // Regular attendance
     ageCategory: "adult",
     belt: {
       color: "brown",
@@ -107,7 +111,8 @@ export const members: DojoMember[] = [
     role: "admin",
     joinedAt: "2022-06-12",
     lastActive: "2024-12-19",
-    birthday: "1988-11-08",
+    birthday: "1988-12-20", // Today's birthday
+    attendancePercentage: 72, // Moderate attendance
     ageCategory: "adult",
     belt: {
       color: "purple",
@@ -135,7 +140,8 @@ export const members: DojoMember[] = [
     role: "member",
     joinedAt: "2024-11-15",
     lastActive: "2024-12-18",
-    birthday: "1995-04-12",
+    birthday: "1995-12-28", // This month birthday
+    attendancePercentage: 65, // Lower attendance
     ageCategory: "adult",
     belt: {
       color: "blue",
@@ -162,6 +168,7 @@ export const members: DojoMember[] = [
     joinedAt: "2024-10-03",
     lastActive: "2024-12-10",
     birthday: "1992-09-25",
+    attendancePercentage: 78, // Good attendance
     ageCategory: "adult",
     belt: {
       color: "white",
@@ -466,6 +473,7 @@ export const members: DojoMember[] = [
     joinedAt: "2023-11-05",
     lastActive: "2024-12-05",
     birthday: "1991-12-03",
+    attendancePercentage: 45, // Low attendance due to injury
     ageCategory: "adult",
     belt: {
       color: "purple",

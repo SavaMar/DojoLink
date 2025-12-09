@@ -1,7 +1,6 @@
 "use client";
 
-import { getDojoData, getDojoMembers } from "@/data/dojos";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getDojoMembers } from "@/data/dojos";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,7 +14,6 @@ import {
   Users,
   Plus,
   Search,
-  Filter,
   Calendar,
   Award,
   Phone,
@@ -23,16 +21,9 @@ import {
   User,
   CreditCard,
   AlertTriangle,
-  Plane,
-  Heart,
   Clock,
 } from "lucide-react";
-import {
-  getBeltDisplayName,
-  getBeltColorClass,
-  calculateAge,
-  ageCategories,
-} from "@/lib/belt-system";
+import { calculateAge, ageCategories } from "@/lib/belt-system";
 import { DojoMember, AgeCategory, BeltColor } from "@/types/dojo";
 import { useState, useEffect, use } from "react";
 
@@ -42,35 +33,6 @@ interface MembersPageProps {
     dojo: string;
   }>;
 }
-
-const statusColors = {
-  active: "bg-green-100 text-green-800",
-  inactive: "bg-yellow-100 text-yellow-800",
-  suspended: "bg-red-100 text-red-800",
-  on_vacation: "bg-blue-100 text-blue-800",
-  injured: "bg-orange-100 text-orange-800",
-};
-
-const paymentStatusColors = {
-  paid: "bg-green-100 text-green-800",
-  up_to_date: "bg-green-100 text-green-800",
-  due_soon: "bg-yellow-100 text-yellow-800",
-  overdue: "bg-red-100 text-red-800",
-};
-
-const paymentStatusLabels = {
-  paid: "Paid",
-  up_to_date: "Up to Date",
-  due_soon: "Due Soon",
-  overdue: "Overdue",
-};
-
-const subscriptionTypeLabels = {
-  year: "Year",
-  month: "Month",
-  quarter: "Quarter",
-  one_time: "One Time",
-};
 
 // Date formatting utility
 const formatDate = (dateString: string): string => {
@@ -93,6 +55,68 @@ const beltColors: BeltColor[] = [
   "red",
 ];
 
+const getBeltColor = (belt: string) => {
+  const colors = {
+    white: "rgb(255, 255, 255)",
+    yellow: "rgb(255, 255, 0)",
+    orange: "rgb(255, 165, 0)",
+    green: "rgb(0, 128, 0)",
+    blue: "rgb(0, 0, 255)",
+    purple: "rgb(128, 0, 128)",
+    brown: "rgb(139, 69, 19)",
+    black: "rgb(0, 0, 0)",
+    red: "rgb(255, 0, 0)",
+  };
+  return colors[belt as keyof typeof colors] || "rgb(255, 255, 255)";
+};
+
+const getAttendanceColor = (percentage: number) => {
+  if (percentage >= 90) return "rgb(34, 197, 94)"; // Green - excellent
+  if (percentage >= 75) return "rgb(59, 130, 246)"; // Blue - good
+  if (percentage >= 60) return "rgb(251, 191, 36)"; // Yellow - moderate
+  if (percentage >= 40) return "rgb(245, 158, 11)"; // Orange - low
+  return "rgb(239, 68, 68)"; // Red - very low
+};
+
+const isBirthdayToday = (member: DojoMember) => {
+  // Use prototype flag if available, otherwise fall back to date calculation
+  if (member.isBirthdayToday !== undefined) {
+    return member.isBirthdayToday;
+  }
+
+  const today = new Date();
+  const birthDate = new Date(member.birthday);
+  return (
+    today.getMonth() === birthDate.getMonth() &&
+    today.getDate() === birthDate.getDate()
+  );
+};
+
+const getBirthdaysThisMonth = (members: DojoMember[]) => {
+  const today = new Date();
+  return members.filter((member) => {
+    const birthDate = new Date(member.birthday);
+    return birthDate.getMonth() === today.getMonth();
+  }).length;
+};
+
+const getSubscriptionDisplay = (subscriptionType: string) => {
+  const typeMap = {
+    year: "1 Year",
+    month: "1 Month",
+    quarter: "3 Months",
+    one_time: "One Time",
+  };
+  return typeMap[subscriptionType as keyof typeof typeMap] || subscriptionType;
+};
+
+const getSubscriptionScope = () => {
+  // This would come from member data in a real app
+  // For now, we'll simulate based on member data
+  const scopes = ["Full Access", "BJJ Only", "Kickboxing Only", "MMA Only"];
+  return scopes[Math.floor(Math.random() * scopes.length)];
+};
+
 export default function MembersPage({ params }: MembersPageProps) {
   const resolvedParams = use(params);
   const [members, setMembers] = useState<DojoMember[]>([]);
@@ -102,10 +126,13 @@ export default function MembersPage({ params }: MembersPageProps) {
   const [ageFilter, setAgeFilter] = useState<AgeCategory | "all">("all");
   const [beltFilter, setBeltFilter] = useState<BeltColor | "all">("all");
   const [statusFilter, setStatusFilter] = useState<
-    "all" | "active" | "inactive" | "suspended" | "on_vacation" | "injured"
+    "all" | "active" | "frozen" | "suspended" | "on_vacation" | "injured"
   >("all");
-  const [paymentFilter, setPaymentFilter] = useState<
-    "all" | "paid" | "up_to_date" | "due_soon" | "overdue"
+  const [birthdayFilter, setBirthdayFilter] = useState<
+    "all" | "today" | "this_month"
+  >("all");
+  const [attendanceFilter, setAttendanceFilter] = useState<
+    "all" | "excellent" | "good" | "moderate" | "low"
   >("all");
 
   useEffect(() => {
@@ -147,18 +174,54 @@ export default function MembersPage({ params }: MembersPageProps) {
 
     // Status filter
     if (statusFilter !== "all") {
-      filtered = filtered.filter((member) => member.status === statusFilter);
+      filtered = filtered.filter((member) => {
+        if (statusFilter === "frozen") {
+          return member.status === "inactive";
+        }
+        return member.status === statusFilter;
+      });
     }
 
-    // Payment filter
-    if (paymentFilter !== "all") {
-      filtered = filtered.filter(
-        (member) => member.paymentStatus.status === paymentFilter
-      );
+    // Birthday filter
+    if (birthdayFilter === "today") {
+      filtered = filtered.filter((member) => isBirthdayToday(member));
+    } else if (birthdayFilter === "this_month") {
+      const today = new Date();
+      filtered = filtered.filter((member) => {
+        const birthDate = new Date(member.birthday);
+        return birthDate.getMonth() === today.getMonth();
+      });
+    }
+
+    // Attendance filter
+    if (attendanceFilter !== "all") {
+      filtered = filtered.filter((member) => {
+        const percentage = member.attendancePercentage || 0;
+        switch (attendanceFilter) {
+          case "excellent":
+            return percentage >= 90;
+          case "good":
+            return percentage >= 75 && percentage < 90;
+          case "moderate":
+            return percentage >= 60 && percentage < 75;
+          case "low":
+            return percentage < 60;
+          default:
+            return true;
+        }
+      });
     }
 
     setFilteredMembers(filtered);
-  }, [members, searchTerm, ageFilter, beltFilter, statusFilter, paymentFilter]);
+  }, [
+    members,
+    searchTerm,
+    ageFilter,
+    beltFilter,
+    statusFilter,
+    birthdayFilter,
+    attendanceFilter,
+  ]);
 
   const getMemberStats = () => {
     const total = members.length;
@@ -192,8 +255,11 @@ export default function MembersPage({ params }: MembersPageProps) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading members...</p>
+          <div
+            className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-4"
+            style={{ borderColor: "rgb(3, 126, 168)" }}
+          ></div>
+          <p style={{ color: "rgb(180, 180, 180)" }}>Loading members...</p>
         </div>
       </div>
     );
@@ -201,462 +267,543 @@ export default function MembersPage({ params }: MembersPageProps) {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dojo Members</h1>
-          <p className="text-gray-600 mt-1">
+          <h1
+            className="text-3xl font-bold"
+            style={{ color: "rgb(255, 255, 255)" }}
+          >
+            Dojo Members
+          </h1>
+          <p className="mt-1" style={{ color: "rgb(180, 180, 180)" }}>
             Manage your dojo members and their training progress
           </p>
         </div>
-        <Button>
+        <Button style={{ backgroundColor: "rgb(3, 126, 168)" }}>
           <Plus className="w-4 h-4 mr-2" />
           Add Member
         </Button>
       </div>
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-9 gap-4">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <Users className="h-8 w-8 text-blue-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">
-                  Total Members
-                </p>
-                <p className="text-2xl font-bold">{stats.total}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center">
-                <div className="w-3 h-3 bg-green-600 rounded-full"></div>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Active</p>
-                <p className="text-2xl font-bold">{stats.active}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="h-8 w-8 bg-orange-100 rounded-full flex items-center justify-center">
-                <User className="h-4 w-4 text-orange-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">
-                  Children (3-7)
-                </p>
-                <p className="text-2xl font-bold">{stats.byAge.children}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="h-8 w-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                <User className="h-4 w-4 text-yellow-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">
-                  Youth (7-18)
-                </p>
-                <p className="text-2xl font-bold">
-                  {stats.byAge["adult-children"] + stats.byAge.youth}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="h-8 w-8 bg-purple-100 rounded-full flex items-center justify-center">
-                <User className="h-4 w-4 text-purple-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">
-                  Adults (18+)
-                </p>
-                <p className="text-2xl font-bold">{stats.byAge.adult}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="h-8 w-8 bg-red-100 rounded-full flex items-center justify-center">
-                <AlertTriangle className="h-4 w-4 text-red-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Overdue</p>
-                <p className="text-2xl font-bold text-red-600">
-                  {stats.byPayment.overdue}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="h-8 w-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                <AlertTriangle className="h-4 w-4 text-yellow-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Due Soon</p>
-                <p className="text-2xl font-bold text-yellow-600">
-                  {stats.byPayment.dueSoon}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <Plane className="h-4 w-4 text-blue-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">On Vacation</p>
-                <p className="text-2xl font-bold text-blue-600">
-                  {stats.byStatus.onVacation}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="h-8 w-8 bg-orange-100 rounded-full flex items-center justify-center">
-                <Heart className="h-4 w-4 text-orange-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Injured</p>
-                <p className="text-2xl font-bold text-orange-600">
-                  {stats.byStatus.injured}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Stats Overview - Simplified */}
+      <div className="flex items-center space-x-6">
+        <div className="flex items-center space-x-2">
+          <Users className="w-5 h-5" style={{ color: "rgb(3, 126, 168)" }} />
+          <span
+            className="text-lg font-semibold"
+            style={{ color: "rgb(255, 255, 255)" }}
+          >
+            {stats.total} Total
+          </span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <div
+            className="w-2 h-2 rounded-full"
+            style={{ backgroundColor: "rgb(34, 197, 94)" }}
+          ></div>
+          <span className="text-sm" style={{ color: "rgb(180, 180, 180)" }}>
+            {stats.active} Active
+          </span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <div
+            className="w-2 h-2 rounded-full"
+            style={{ backgroundColor: "rgb(239, 68, 68)" }}
+          ></div>
+          <span className="text-sm" style={{ color: "rgb(180, 180, 180)" }}>
+            {stats.byPayment.overdue} Overdue
+          </span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <div
+            className="w-2 h-2 rounded-full"
+            style={{ backgroundColor: "rgb(251, 191, 36)" }}
+          ></div>
+          <span className="text-sm" style={{ color: "rgb(180, 180, 180)" }}>
+            {stats.byPayment.dueSoon} Due Soon
+          </span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Calendar
+            className="w-4 h-4"
+            style={{ color: "rgb(251, 191, 36)" }}
+          />
+          <span className="text-sm" style={{ color: "rgb(180, 180, 180)" }}>
+            {getBirthdaysThisMonth(members)} Birthdays this month
+          </span>
+        </div>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Filter className="w-5 h-5 mr-2" />
-            Filters
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                placeholder="Search members..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
+      {/* Filters - Simplified */}
+      <div className="flex items-center space-x-4">
+        <div className="relative flex-1 max-w-md">
+          <Search
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4"
+            style={{ color: "rgb(180, 180, 180)" }}
+          />
+          <input
+            type="text"
+            placeholder="Search members..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 rounded-lg"
+            style={{
+              backgroundColor: "rgb(63, 67, 70)",
+              border: "1px solid rgb(63, 67, 70)",
+              color: "rgb(255, 255, 255)",
+            }}
+          />
+        </div>
 
-            {/* Age Category Filter */}
-            <Select
-              value={ageFilter}
-              onValueChange={(value) =>
-                setAgeFilter(value as AgeCategory | "all")
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Age Category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Ages</SelectItem>
-                {Object.entries(ageCategories).map(([key, value]) => (
-                  <SelectItem key={key} value={key}>
-                    {value.label} ({value.ageRange})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* Belt Filter */}
-            <Select
-              value={beltFilter}
-              onValueChange={(value) =>
-                setBeltFilter(value as BeltColor | "all")
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Belt Color" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Belts</SelectItem>
-                {beltColors.map((color) => (
-                  <SelectItem key={color} value={color}>
-                    {color.charAt(0).toUpperCase() + color.slice(1)} Belt
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* Status Filter */}
-            <Select
-              value={statusFilter}
-              onValueChange={(value) =>
-                setStatusFilter(
-                  value as
-                    | "all"
-                    | "active"
-                    | "inactive"
-                    | "suspended"
-                    | "on_vacation"
-                    | "injured"
-                )
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-                <SelectItem value="suspended">Suspended</SelectItem>
-                <SelectItem value="on_vacation">On Vacation</SelectItem>
-                <SelectItem value="injured">Injured</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Payment Status Filter */}
-            <Select
-              value={paymentFilter}
-              onValueChange={(value) =>
-                setPaymentFilter(
-                  value as
-                    | "all"
-                    | "paid"
-                    | "up_to_date"
-                    | "due_soon"
-                    | "overdue"
-                )
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Payment Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Payments</SelectItem>
-                <SelectItem value="up_to_date">Up to Date</SelectItem>
-                <SelectItem value="due_soon">Due Soon</SelectItem>
-                <SelectItem value="overdue">Overdue</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Members Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        {filteredMembers.map((member) => (
-          <Card
-            key={member.id}
-            className="hover:shadow-lg transition-shadow flex flex-col h-full"
+        <Select
+          value={ageFilter}
+          onValueChange={(value) => setAgeFilter(value as AgeCategory | "all")}
+        >
+          <SelectTrigger
+            className="w-40"
+            style={{
+              backgroundColor: "rgb(63, 67, 70)",
+              borderColor: "rgb(63, 67, 70)",
+            }}
           >
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                    <span className="text-gray-600 font-medium text-sm">
-                      {member.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </span>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <CardTitle className="text-sm font-medium truncate">
-                      {member.name}
-                    </CardTitle>
-                    <p className="text-xs text-gray-500 truncate">
-                      {member.email}
-                    </p>
-                  </div>
+            <SelectValue placeholder="Age" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Ages</SelectItem>
+            {Object.entries(ageCategories).map(([key, value]) => (
+              <SelectItem key={key} value={key}>
+                {value.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={beltFilter}
+          onValueChange={(value) => setBeltFilter(value as BeltColor | "all")}
+        >
+          <SelectTrigger
+            className="w-32"
+            style={{
+              backgroundColor: "rgb(63, 67, 70)",
+              borderColor: "rgb(63, 67, 70)",
+            }}
+          >
+            <SelectValue placeholder="Belt" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Belts</SelectItem>
+            {beltColors.map((color) => (
+              <SelectItem key={color} value={color}>
+                {color.charAt(0).toUpperCase() + color.slice(1)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={statusFilter}
+          onValueChange={(value) => {
+            if (value === "inactive") {
+              setStatusFilter("frozen");
+            } else {
+              setStatusFilter(
+                value as
+                  | "all"
+                  | "active"
+                  | "suspended"
+                  | "on_vacation"
+                  | "injured"
+              );
+            }
+          }}
+        >
+          <SelectTrigger
+            className="w-32"
+            style={{
+              backgroundColor: "rgb(63, 67, 70)",
+              borderColor: "rgb(63, 67, 70)",
+            }}
+          >
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="frozen">Frozen</SelectItem>
+            <SelectItem value="suspended">Suspended</SelectItem>
+            <SelectItem value="on_vacation">On Vacation</SelectItem>
+            <SelectItem value="injured">Injured</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Button
+          variant={birthdayFilter === "this_month" ? "default" : "outline"}
+          size="sm"
+          onClick={() =>
+            setBirthdayFilter(
+              birthdayFilter === "this_month" ? "all" : "this_month"
+            )
+          }
+          style={{
+            backgroundColor:
+              birthdayFilter === "this_month"
+                ? "rgb(3, 126, 168)"
+                : "transparent",
+            borderColor: "rgb(63, 67, 70)",
+            color:
+              birthdayFilter === "this_month" ? "white" : "rgb(180, 180, 180)",
+          }}
+        >
+          <Calendar className="w-4 h-4 mr-1" />
+          Birthdays this month
+        </Button>
+
+        <Button
+          variant={attendanceFilter === "excellent" ? "default" : "outline"}
+          size="sm"
+          onClick={() =>
+            setAttendanceFilter(
+              attendanceFilter === "excellent" ? "all" : "excellent"
+            )
+          }
+          style={{
+            backgroundColor:
+              attendanceFilter === "excellent"
+                ? "rgb(3, 126, 168)"
+                : "transparent",
+            borderColor: "rgb(63, 67, 70)",
+            color:
+              attendanceFilter === "excellent" ? "white" : "rgb(180, 180, 180)",
+          }}
+        >
+          Excellent (90%+)
+        </Button>
+
+        <Button
+          variant={attendanceFilter === "good" ? "default" : "outline"}
+          size="sm"
+          onClick={() =>
+            setAttendanceFilter(attendanceFilter === "good" ? "all" : "good")
+          }
+          style={{
+            backgroundColor:
+              attendanceFilter === "good" ? "rgb(3, 126, 168)" : "transparent",
+            borderColor: "rgb(63, 67, 70)",
+            color: attendanceFilter === "good" ? "white" : "rgb(180, 180, 180)",
+          }}
+        >
+          Good (75-89%)
+        </Button>
+
+        <Button
+          variant={attendanceFilter === "moderate" ? "default" : "outline"}
+          size="sm"
+          onClick={() =>
+            setAttendanceFilter(
+              attendanceFilter === "moderate" ? "all" : "moderate"
+            )
+          }
+          style={{
+            backgroundColor:
+              attendanceFilter === "moderate"
+                ? "rgb(3, 126, 168)"
+                : "transparent",
+            borderColor: "rgb(63, 67, 70)",
+            color:
+              attendanceFilter === "moderate" ? "white" : "rgb(180, 180, 180)",
+          }}
+        >
+          Moderate (60-74%)
+        </Button>
+
+        <Button
+          variant={attendanceFilter === "low" ? "default" : "outline"}
+          size="sm"
+          onClick={() =>
+            setAttendanceFilter(attendanceFilter === "low" ? "all" : "low")
+          }
+          style={{
+            backgroundColor:
+              attendanceFilter === "low" ? "rgb(3, 126, 168)" : "transparent",
+            borderColor: "rgb(63, 67, 70)",
+            color: attendanceFilter === "low" ? "white" : "rgb(180, 180, 180)",
+          }}
+        >
+          Low (&lt;60%)
+        </Button>
+      </div>
+
+      {/* Members List */}
+      <div className="space-y-2">
+        {filteredMembers
+          .sort((a, b) => {
+            // Sort by birthday today first, then by name
+            const aIsBirthday = isBirthdayToday(a);
+            const bIsBirthday = isBirthdayToday(b);
+            if (aIsBirthday && !bIsBirthday) return -1;
+            if (!aIsBirthday && bIsBirthday) return 1;
+            return a.name.localeCompare(b.name);
+          })
+          .map((member) => (
+            <div
+              key={member.id}
+              className="flex items-center justify-between p-4 rounded-lg hover:bg-opacity-50 transition-colors"
+              style={{ backgroundColor: "rgb(42, 46, 49)" }}
+            >
+              {/* Left: Member Info */}
+              <div className="flex items-center space-x-4 flex-1">
+                {/* Avatar */}
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium"
+                  style={{ backgroundColor: "rgb(63, 67, 70)" }}
+                >
+                  {member.name
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")}
                 </div>
-                <Badge className={`${statusColors[member.status]} text-xs`}>
-                  {member.status.replace("_", " ")}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0 flex-1 flex flex-col">
-              <div className="space-y-3 flex-1">
-                {/* Belt and Subscription */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <div
-                      className={`w-4 h-4 rounded-full border ${getBeltColorClass(
-                        member.belt
-                      )}`}
-                    ></div>
-                    <span className="text-xs font-medium">
+
+                {/* Basic Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center space-x-3 mb-1">
+                    <h3 className="font-semibold text-white truncate">
+                      {member.name}
+                    </h3>
+
+                    {/* Status Display */}
+                    {member.status === "active" ||
+                    member.status === "on_vacation" ||
+                    member.status === "injured" ||
+                    member.status === "inactive" ? (
+                      <span
+                        className="text-sm font-medium"
+                        style={{
+                          color:
+                            member.status === "active"
+                              ? "rgb(34, 197, 94)"
+                              : member.status === "on_vacation"
+                              ? "rgb(59, 130, 246)"
+                              : member.status === "injured"
+                              ? "rgb(185, 28, 28)"
+                              : member.status === "inactive"
+                              ? "rgb(59, 130, 246)"
+                              : "rgb(180, 180, 180)",
+                        }}
+                      >
+                        {member.status === "on_vacation"
+                          ? "On Vacation"
+                          : member.status === "inactive"
+                          ? "Frozen"
+                          : member.status.charAt(0).toUpperCase() +
+                            member.status.slice(1)}
+                      </span>
+                    ) : (
+                      <Badge
+                        style={{
+                          backgroundColor: "rgba(239, 68, 68, 0.6)",
+                          color: "white",
+                          fontSize: "0.75rem",
+                          padding: "0.25rem 0.5rem",
+                        }}
+                      >
+                        {member.status.charAt(0).toUpperCase() +
+                          member.status.slice(1)}
+                      </Badge>
+                    )}
+
+                    {isBirthdayToday(member) && (
+                      <Badge
+                        style={{
+                          backgroundColor: "rgba(251, 191, 36, 0.7)",
+                          color: "white",
+                          fontSize: "0.75rem",
+                          padding: "0.25rem 0.5rem",
+                        }}
+                      >
+                        Birthday Today!
+                      </Badge>
+                    )}
+                  </div>
+
+                  <div
+                    className="flex items-center space-x-4 text-sm"
+                    style={{ color: "rgb(180, 180, 180)" }}
+                  >
+                    <div className="flex items-center">
+                      <Mail className="w-3 h-3 mr-1" />
+                      {member.email}
+                    </div>
+                    {member.phone && (
+                      <div className="flex items-center">
+                        <Phone className="w-3 h-3 mr-1" />
+                        {member.phone}
+                      </div>
+                    )}
+                    <div className="flex items-center">
+                      <User className="w-3 h-3 mr-1" />
+                      <span
+                        style={{
+                          color: isBirthdayToday(member)
+                            ? "rgb(251, 191, 36)"
+                            : "rgb(180, 180, 180)",
+                          fontWeight: isBirthdayToday(member)
+                            ? "bold"
+                            : "normal",
+                        }}
+                      >
+                        {calculateAge(member.birthday)} years
+                      </span>
+                    </div>
+                    <div className="flex items-center">
+                      <div
+                        className="w-3 h-3 rounded-full border mr-1"
+                        style={{
+                          backgroundColor: getBeltColor(member.belt.color),
+                        }}
+                      ></div>
                       {member.belt.color.charAt(0).toUpperCase() +
                         member.belt.color.slice(1)}
                       {member.belt.stripes > 0 && ` (${member.belt.stripes})`}
-                    </span>
+                    </div>
+                    <div className="flex items-center">
+                      <Calendar className="w-3 h-3 mr-1" />
+                      <span
+                        style={{
+                          color: isBirthdayToday(member)
+                            ? "rgb(251, 191, 36)"
+                            : "rgb(180, 180, 180)",
+                        }}
+                      >
+                        {formatDate(member.birthday)}
+                      </span>
+                    </div>
+                    {member.attendancePercentage !== undefined && (
+                      <div className="flex items-center">
+                        <div
+                          className="w-3 h-3 mr-1 rounded-full"
+                          style={{
+                            backgroundColor: getAttendanceColor(
+                              member.attendancePercentage
+                            ),
+                          }}
+                        ></div>
+                        <span style={{ color: "rgb(180, 180, 180)" }}>
+                          {member.attendancePercentage}% attendance
+                        </span>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center space-x-1">
-                    <CreditCard className="w-3 h-3 text-gray-500" />
-                    <span className="text-xs text-gray-600">
-                      {
-                        subscriptionTypeLabels[
-                          member.paymentStatus.subscriptionType
-                        ]
-                      }
-                    </span>
-                  </div>
-                </div>
 
-                {/* Payment Status */}
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">
-                    Age: {calculateAge(member.birthday)}
-                  </span>
-                  <div className="flex items-center space-x-1">
-                    <Badge
-                      className={`${
-                        paymentStatusColors[member.paymentStatus.status]
-                      } text-xs px-2 py-0.5`}
-                    >
-                      {paymentStatusLabels[member.paymentStatus.status]}
-                    </Badge>
-                    {(member.paymentStatus.status === "overdue" ||
-                      member.paymentStatus.status === "due_soon") && (
-                      <AlertTriangle className="w-3 h-3 text-red-500" />
+                  {/* Subscription and Payment Info */}
+                  <div
+                    className="flex items-center space-x-4 text-sm mt-1"
+                    style={{ color: "rgb(150, 150, 150)" }}
+                  >
+                    <div className="flex items-center">
+                      <CreditCard className="w-3 h-3 mr-1" />
+                      {getSubscriptionDisplay(
+                        member.paymentStatus.subscriptionType
+                      )}{" "}
+                      - {getSubscriptionScope()}
+                    </div>
+                    {member.paymentStatus.status === "overdue" && (
+                      <div
+                        className="flex items-center"
+                        style={{ color: "rgb(239, 68, 68)" }}
+                      >
+                        <AlertTriangle className="w-3 h-3 mr-1" />
+                        Due: {formatDate(member.paymentStatus.nextPaymentDue)}
+                      </div>
+                    )}
+                    {member.paymentStatus.status === "due_soon" && (
+                      <div
+                        className="flex items-center"
+                        style={{ color: "rgb(251, 191, 36)" }}
+                      >
+                        <Clock className="w-3 h-3 mr-1" />
+                        Due: {formatDate(member.paymentStatus.nextPaymentDue)}
+                      </div>
                     )}
                   </div>
                 </div>
-
-                {/* Key Information */}
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <span>Joined:</span>
-                    <span>{formatDate(member.joinedAt)}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <span>Next payment:</span>
-                    <span>
-                      {formatDate(member.paymentStatus.nextPaymentDue)}
-                    </span>
-                  </div>
-                  {member.phone && (
-                    <div className="flex items-center text-xs text-gray-500">
-                      <Phone className="w-3 h-3 mr-1" />
-                      {member.phone}
-                    </div>
-                  )}
-                </div>
-
-                {/* Absence Information */}
-                {member.absenceInfo && (
-                  <div className="pt-2 border-t border-gray-200">
-                    <div className="flex items-center space-x-1 mb-1">
-                      {member.absenceInfo.reason === "vacation" ? (
-                        <Plane className="w-3 h-3 text-blue-500" />
-                      ) : (
-                        <Heart className="w-3 h-3 text-orange-500" />
-                      )}
-                      <p className="text-xs font-medium text-gray-500 capitalize">
-                        {member.absenceInfo.reason === "vacation"
-                          ? "Vacation"
-                          : "Injured"}
-                      </p>
-                    </div>
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between text-xs text-gray-500">
-                        <span>From:</span>
-                        <span>{formatDate(member.absenceInfo.startDate)}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-xs text-gray-500">
-                        <span>Return:</span>
-                        <span>
-                          {formatDate(member.absenceInfo.expectedReturnDate)}
-                        </span>
-                      </div>
-                      {member.absenceInfo.notes && (
-                        <p className="text-xs text-gray-400 truncate">
-                          {member.absenceInfo.notes}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Emergency Contact */}
-                {member.emergencyContact && (
-                  <div className="pt-2 border-t border-gray-200">
-                    <p className="text-xs font-medium text-gray-500 mb-1">
-                      Emergency
-                    </p>
-                    <p className="text-xs text-gray-600 truncate">
-                      {member.emergencyContact.name} (
-                      {member.emergencyContact.relationship})
-                    </p>
-                  </div>
-                )}
               </div>
 
-              {/* Action Buttons - Always at bottom */}
-              <div className="flex space-x-1 pt-2 mt-auto">
+              {/* Right: Actions */}
+              <div className="flex items-center space-x-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex-1 text-xs px-2 py-1"
+                  style={{
+                    borderColor: "rgb(107, 114, 128)",
+                    color: "rgb(107, 114, 128)",
+                    padding: "0.5rem 1rem",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor =
+                      "rgba(107, 114, 128, 0.1)";
+                    e.currentTarget.style.borderColor = "rgb(75, 85, 99)";
+                    e.currentTarget.style.color = "rgb(75, 85, 99)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = "transparent";
+                    e.currentTarget.style.borderColor = "rgb(107, 114, 128)";
+                    e.currentTarget.style.color = "rgb(107, 114, 128)";
+                  }}
                 >
+                  <User className="w-4 h-4 mr-1" />
                   View
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex-1 text-xs px-2 py-1"
+                  style={{
+                    borderColor: "rgb(3, 126, 168)",
+                    color: "rgb(3, 126, 168)",
+                    padding: "0.5rem 1rem",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor =
+                      "rgba(3, 126, 168, 0.1)";
+                    e.currentTarget.style.borderColor = "rgb(2, 100, 140)";
+                    e.currentTarget.style.color = "rgb(2, 100, 140)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = "transparent";
+                    e.currentTarget.style.borderColor = "rgb(3, 126, 168)";
+                    e.currentTarget.style.color = "rgb(3, 126, 168)";
+                  }}
                 >
+                  <Award className="w-4 h-4 mr-1" />
                   Edit
                 </Button>
               </div>
-            </CardContent>
-          </Card>
-        ))}
+            </div>
+          ))}
       </div>
 
       {filteredMembers.length === 0 && (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No members found
-            </h3>
-            <p className="text-gray-500">
-              {searchTerm ||
-              ageFilter !== "all" ||
-              beltFilter !== "all" ||
-              statusFilter !== "all"
-                ? "Try adjusting your filters to see more results."
-                : "Get started by adding your first member."}
-            </p>
-          </CardContent>
-        </Card>
+        <div className="text-center py-12">
+          <Users
+            className="h-12 w-12 mx-auto mb-4"
+            style={{ color: "rgb(180, 180, 180)" }}
+          />
+          <h3
+            className="text-lg font-medium mb-2"
+            style={{ color: "rgb(255, 255, 255)" }}
+          >
+            No members found
+          </h3>
+          <p style={{ color: "rgb(180, 180, 180)" }}>
+            {searchTerm ||
+            ageFilter !== "all" ||
+            beltFilter !== "all" ||
+            statusFilter !== "all"
+              ? "Try adjusting your filters to see more results."
+              : "Get started by adding your first member."}
+          </p>
+        </div>
       )}
     </div>
   );

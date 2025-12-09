@@ -26,6 +26,7 @@ const navigation = [
   { name: "Events", href: "events", icon: Calendar },
   { name: "Dojo Members", href: "members", icon: Users },
   { name: "Instructors", href: "instructors", icon: Users },
+  { name: "Trial apply", href: "trial-applications", icon: Users, hasNotification: true },
   { name: "Analytics", href: "analytics", icon: BarChart3 },
   { name: "Notifications", href: "notifications", icon: Bell },
   { name: "Settings", href: "settings", icon: Settings },
@@ -71,26 +72,26 @@ export function DashboardSidebar({ dojo, locale }: DashboardSidebarProps) {
       {/* Sidebar */}
       <div
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
+          "fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         )}
+        style={{
+          backgroundColor: "rgb(20, 24, 27)",
+          borderRightColor: "rgb(63, 67, 70)",
+        }}
       >
         <div className="flex flex-col h-full">
           {/* Logo/Header */}
-          <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">DN</span>
-              </div>
-              <div>
-                <h1 className="text-lg font-semibold text-gray-900">
-                  DojoLink
-                </h1>
-                <p className="text-xs text-gray-500 capitalize">
-                  {dojo.replace("-", " ")}
-                </p>
-              </div>
-            </div>
+          <div
+            className="flex items-center justify-center h-16 px-6 border-b"
+            style={{ borderBottomColor: "rgb(63, 67, 70)" }}
+          >
+            <h1
+              className="text-lg font-semibold"
+              style={{ color: "rgb(255, 255, 255)" }}
+            >
+              Naster Nyon
+            </h1>
           </div>
 
           {/* Navigation */}
@@ -106,32 +107,76 @@ export function DashboardSidebar({ dojo, locale }: DashboardSidebarProps) {
                 <Link
                   key={item.name}
                   href={href}
-                  className={cn(
-                    "flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors",
-                    isActive(item.href)
-                      ? "bg-blue-50 text-blue-700 border-r-2 border-blue-700"
-                      : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
-                  )}
+                  className="flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors"
+                  style={{
+                    backgroundColor: isActive(item.href)
+                      ? "rgb(3, 126, 168)"
+                      : "transparent",
+                    color: isActive(item.href)
+                      ? "rgb(255, 255, 255)"
+                      : "rgb(180, 180, 180)",
+                    borderRight: isActive(item.href)
+                      ? "2px solid rgb(3, 126, 168)"
+                      : "none",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive(item.href)) {
+                      e.currentTarget.style.backgroundColor = "rgb(63, 67, 70)";
+                      e.currentTarget.style.color = "rgb(255, 255, 255)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive(item.href)) {
+                      e.currentTarget.style.backgroundColor = "transparent";
+                      e.currentTarget.style.color = "rgb(180, 180, 180)";
+                    }
+                  }}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  <Icon className="mr-3 h-5 w-5" />
-                  {item.name}
+                  <div className="flex items-center">
+                    <Icon className="mr-3 h-5 w-5" />
+                    {item.name}
+                    {item.hasNotification && (
+                      <div className="ml-2 relative">
+                        <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+                      </div>
+                    )}
+                  </div>
                 </Link>
               );
             })}
           </nav>
 
           {/* User info */}
-          <div className="p-4 border-t border-gray-200">
+          <div
+            className="p-4 border-t"
+            style={{ borderTopColor: "rgb(63, 67, 70)" }}
+          >
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                <span className="text-gray-600 text-sm font-medium">MS</span>
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center"
+                style={{ backgroundColor: "rgb(63, 67, 70)" }}
+              >
+                <span
+                  className="text-sm font-medium"
+                  style={{ color: "rgb(180, 180, 180)" }}
+                >
+                  MS
+                </span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
+                <p
+                  className="text-sm font-medium truncate"
+                  style={{ color: "rgb(255, 255, 255)" }}
+                >
                   Marco Silva
                 </p>
-                <p className="text-xs text-gray-500 truncate">Owner</p>
+                <p
+                  className="text-xs truncate"
+                  style={{ color: "rgb(180, 180, 180)" }}
+                >
+                  Owner
+                </p>
               </div>
             </div>
           </div>

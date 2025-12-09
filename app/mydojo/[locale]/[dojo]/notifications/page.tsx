@@ -94,7 +94,7 @@ export default async function NotificationsPage({
       </div>
 
       {/* Notification Settings */}
-      <Card>
+      <Card style={{ backgroundColor: "rgb(42, 46, 49)" }}>
         <CardHeader>
           <CardTitle className="flex items-center">
             <Bell className="w-5 h-5 mr-2" />

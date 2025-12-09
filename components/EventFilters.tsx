@@ -66,11 +66,22 @@ export function EventFilters({
                 category: undefined,
               })
             }
-            className={`px-4 py-2 rounded-md ${
-              !filters.category
-                ? "bg-gray-900 text-white"
-                : "bg-gray-100 text-gray-800 hover:bg-gray-200"
-            }`}
+            className="px-4 py-2 rounded-md text-white transition-colors"
+            style={{
+              backgroundColor: !filters.category
+                ? "rgb(228, 80, 56)"
+                : "rgb(63, 67, 70)",
+            }}
+            onMouseEnter={(e) => {
+              if (filters.category) {
+                e.currentTarget.style.backgroundColor = "rgb(3, 126, 168)";
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (filters.category) {
+                e.currentTarget.style.backgroundColor = "rgb(63, 67, 70)";
+              }
+            }}
           >
             All
           </button>
@@ -91,11 +102,23 @@ export function EventFilters({
                   });
                 }
               }}
-              className={`px-4 py-2 rounded-md ${
-                filters.category === category.value
-                  ? "bg-gray-900 text-white"
-                  : "bg-gray-100 text-gray-800 hover:bg-gray-200"
-              }`}
+              className="px-4 py-2 rounded-md text-white transition-colors"
+              style={{
+                backgroundColor:
+                  filters.category === category.value
+                    ? "rgb(228, 80, 56)"
+                    : "rgb(63, 67, 70)",
+              }}
+              onMouseEnter={(e) => {
+                if (filters.category !== category.value) {
+                  e.currentTarget.style.backgroundColor = "rgb(3, 126, 168)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (filters.category !== category.value) {
+                  e.currentTarget.style.backgroundColor = "rgb(63, 67, 70)";
+                }
+              }}
             >
               {category.label}
             </button>
@@ -108,7 +131,14 @@ export function EventFilters({
             // Handle add event - could open a form or navigate to add event page
             window.open("https://forms.gle/YJeddwAdLj9p6uNg9", "_blank");
           }}
-          className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors flex items-center gap-2"
+          className="px-4 py-2 rounded-md text-white transition-colors flex items-center gap-2"
+          style={{ backgroundColor: "rgb(3, 126, 168)" }}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.backgroundColor = "rgb(2, 100, 140)")
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.backgroundColor = "rgb(3, 126, 168)")
+          }
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -133,7 +163,8 @@ export function EventFilters({
         <div className="mb-4">
           <label
             htmlFor="canton-filter"
-            className="block text-sm font-medium text-gray-700 mb-1"
+            className="block text-sm font-medium mb-1"
+            style={{ color: "rgb(180, 180, 180)" }}
           >
             Filter by Canton:
           </label>
@@ -149,11 +180,31 @@ export function EventFilters({
                       e.target.value === "all" ? undefined : e.target.value,
                   })
                 }
-                className="block w-full rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+                className="block w-full rounded-md border py-2 pl-3 pr-10 text-base focus:outline-none sm:text-sm"
+                style={{
+                  backgroundColor: "rgb(63, 67, 70)",
+                  borderColor: "rgb(63, 67, 70)",
+                  color: "rgb(180, 180, 180)",
+                }}
               >
-                <option value="all">All Cantons</option>
+                <option
+                  value="all"
+                  style={{
+                    backgroundColor: "rgb(63, 67, 70)",
+                    color: "rgb(180, 180, 180)",
+                  }}
+                >
+                  All Cantons
+                </option>
                 {availableCantons.map((canton) => (
-                  <option key={canton} value={canton}>
+                  <option
+                    key={canton}
+                    value={canton}
+                    style={{
+                      backgroundColor: "rgb(63, 67, 70)",
+                      color: "rgb(180, 180, 180)",
+                    }}
+                  >
                     {canton}
                   </option>
                 ))}
@@ -161,11 +212,20 @@ export function EventFilters({
             </div>
             <button
               onClick={onTogglePastEvents}
-              className={`px-4 py-2 rounded-md whitespace-nowrap ${
-                showPastEvents
-                  ? "bg-cyan-600 text-white"
-                  : "bg-gray-300 text-gray-600"
-              }`}
+              className="px-4 py-2 rounded-md whitespace-nowrap text-white transition-colors"
+              style={{
+                backgroundColor: showPastEvents
+                  ? "rgb(3, 126, 168)"
+                  : "rgb(63, 67, 70)",
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.backgroundColor = "rgb(3, 126, 168)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.backgroundColor = showPastEvents
+                  ? "rgb(3, 126, 168)"
+                  : "rgb(63, 67, 70)")
+              }
             >
               {showPastEvents ? "Hide Past Events" : "Show Past Events"}
             </button>
@@ -174,7 +234,7 @@ export function EventFilters({
       )}
 
       {/* Results Count */}
-      <div className="text-sm text-gray-600 mb-4">
+      <div className="text-sm mb-4" style={{ color: "rgb(180, 180, 180)" }}>
         Found events: {eventCount}
       </div>
     </div>

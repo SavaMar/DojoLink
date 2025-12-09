@@ -78,6 +78,8 @@ export interface DojoMember {
     expectedReturnDate: string;
     notes?: string;
   };
+  isBirthdayToday?: boolean; // Prototype flag for birthday today
+  attendancePercentage?: number; // How often they attend classes (0-100)
 }
 
 export interface DojoEvent {

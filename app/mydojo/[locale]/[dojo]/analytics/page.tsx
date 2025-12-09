@@ -34,7 +34,7 @@ export default async function AnalyticsPage({ params }: AnalyticsPageProps) {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
+        <Card style={{ backgroundColor: "rgb(42, 46, 49)" }}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Revenue</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
@@ -48,7 +48,7 @@ export default async function AnalyticsPage({ params }: AnalyticsPageProps) {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card style={{ backgroundColor: "rgb(42, 46, 49)" }}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Member Growth</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -62,7 +62,7 @@ export default async function AnalyticsPage({ params }: AnalyticsPageProps) {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card style={{ backgroundColor: "rgb(42, 46, 49)" }}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               Event Attendance
@@ -78,7 +78,7 @@ export default async function AnalyticsPage({ params }: AnalyticsPageProps) {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card style={{ backgroundColor: "rgb(42, 46, 49)" }}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               Retention Rate
@@ -97,7 +97,7 @@ export default async function AnalyticsPage({ params }: AnalyticsPageProps) {
 
       {/* Charts Placeholder */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
+        <Card style={{ backgroundColor: "rgb(42, 46, 49)" }}>
           <CardHeader>
             <CardTitle>Member Growth Over Time</CardTitle>
           </CardHeader>
@@ -113,7 +113,7 @@ export default async function AnalyticsPage({ params }: AnalyticsPageProps) {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card style={{ backgroundColor: "rgb(42, 46, 49)" }}>
           <CardHeader>
             <CardTitle>Revenue Breakdown</CardTitle>
           </CardHeader>

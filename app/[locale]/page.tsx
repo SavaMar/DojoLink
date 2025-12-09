@@ -42,22 +42,10 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Hero Section */}
-      <div className="bg-gray-50 border-b w-full">
-        <div className="px-4 sm:px-6 lg:px-8 py-12 w-full">
-          <div className="text-center w-full">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4 w-full">
-              Jiu Jitsu events, cms and community
-            </h1>
-            <p className="text-lg text-gray-600 w-full">
-              Discover and connect with the Swiss BJJ community through events,
-              seminars, competitions, and more.
-            </p>
-          </div>
-        </div>
-      </div>
-
+    <div
+      className="min-h-screen"
+      style={{ backgroundColor: "rgb(33, 37, 40)" }}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Filters */}
         <EventFilters
@@ -83,7 +71,7 @@ export default function HomePage() {
         {/* No Events Found */}
         {filteredEvents.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">
+            <p className="text-lg" style={{ color: "rgb(180, 180, 180)" }}>
               No events found matching your criteria.
             </p>
           </div>

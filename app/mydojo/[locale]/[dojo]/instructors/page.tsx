@@ -73,7 +73,7 @@ export default async function InstructorsPage({
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+        <Card style={{ backgroundColor: "rgb(42, 46, 49)" }}>
           <CardContent className="p-6">
             <div className="flex items-center">
               <Users className="h-8 w-8 text-blue-600" />
@@ -84,7 +84,7 @@ export default async function InstructorsPage({
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card style={{ backgroundColor: "rgb(42, 46, 49)" }}>
           <CardContent className="p-6">
             <div className="flex items-center">
               <Award className="h-8 w-8 text-purple-600" />
@@ -97,7 +97,7 @@ export default async function InstructorsPage({
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card style={{ backgroundColor: "rgb(42, 46, 49)" }}>
           <CardContent className="p-6">
             <div className="flex items-center">
               <Users className="h-8 w-8 text-green-600" />
@@ -110,7 +110,7 @@ export default async function InstructorsPage({
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card style={{ backgroundColor: "rgb(42, 46, 49)" }}>
           <CardContent className="p-6">
             <div className="flex items-center">
               <Award className="h-8 w-8 text-yellow-600" />

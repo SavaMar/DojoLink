@@ -21,7 +21,10 @@ export default async function DojoLayout({
 
   return (
     <NextIntlClientProvider messages={messages}>
-      <div className="min-h-screen bg-gray-50">
+      <div
+        className="min-h-screen"
+        style={{ backgroundColor: "rgb(33, 37, 40)" }}
+      >
         <div className="flex h-screen">
           <DashboardSidebar
             dojo={resolvedParams.dojo}

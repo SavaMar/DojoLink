@@ -31,7 +31,7 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* General Settings */}
         <div className="lg:col-span-2 space-y-6">
-          <Card>
+          <Card style={{ backgroundColor: "rgb(42, 46, 49)" }}>
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Settings className="w-5 h-5 mr-2" />
@@ -101,7 +101,7 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card style={{ backgroundColor: "rgb(42, 46, 49)" }}>
             <CardHeader>
               <CardTitle>Dojo Image</CardTitle>
             </CardHeader>
@@ -123,7 +123,7 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card style={{ backgroundColor: "rgb(42, 46, 49)" }}>
             <CardHeader>
               <CardTitle>Billing & Pricing</CardTitle>
             </CardHeader>
@@ -160,7 +160,7 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          <Card>
+          <Card style={{ backgroundColor: "rgb(42, 46, 49)" }}>
             <CardHeader>
               <CardTitle>Dojo Status</CardTitle>
             </CardHeader>
@@ -184,7 +184,7 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card style={{ backgroundColor: "rgb(42, 46, 49)" }}>
             <CardHeader>
               <CardTitle>Danger Zone</CardTitle>
             </CardHeader>

@@ -16,10 +16,13 @@ export default async function DojoPage({ params }: DojoPageProps) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          <h1
+            className="text-2xl font-bold mb-2"
+            style={{ color: "rgb(255, 255, 255)" }}
+          >
             Dojo Not Found
           </h1>
-          <p className="text-gray-600">
+          <p style={{ color: "rgb(180, 180, 180)" }}>
             The requested dojo space could not be found.
           </p>
         </div>
